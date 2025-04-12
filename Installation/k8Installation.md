@@ -8,6 +8,7 @@ This document provide a full setp by step procedure to install k8 cluster
 - At least 4 CPUs and 4GB RAM
 - At least 20 GB Storage 
 
+*** In this cluser I have containerd as the container runtime, k8 version - v1.30 and calico as pod network ***
 ---
 
 ## Step 1: Set Hostname, Set ip and Update System
@@ -19,9 +20,9 @@ ip route show default
 hostnamectl set-hostname masternode
 vi /etc/hosts
 ```
-/etc/hosts
-add the following and comment everthing else
-<your-private-ip> masternode localhost
+/etc/hosts <br />
+add the following and comment everthing else <br />
+<<your-private-ip>> masternode localhost<br />
 ```
 cd /etc/netplan
 ls
@@ -94,11 +95,11 @@ mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 vi /etc/containerd/config.toml
 ```
-/etc/containerd/config.toml
-Find: [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
-    SystemdCgroup = false
-Change to: 
-    SystemdCgroup = true
+/etc/containerd/config.toml<br />
+Find: [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]<br />
+    SystemdCgroup = false<br />
+Change to: <br />
+    SystemdCgroup = true<br />
 ```
 systemctl restart containerd
 systemctl enable containerd
@@ -131,7 +132,7 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 ```
 
 ## Step 9: Deploy Pod Network to Cluster###
-s
+
 ```
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.3/manifests/calico.yaml
 ```
@@ -140,13 +141,13 @@ wait for 2 min then check
 kubectl get nodes
 kubectl get pods -A
 ```
-
+--- 
 ## Setup Worker-Node
 
-*** Follow steps from 1 to 7
+*** Follow steps from 1 to 7 ***
 
-*** Join the Cluster 
-Paste the join command created from master node here
+*** Join the Cluster ***
+Paste the join command created from master node here<br />
 example: sudo kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash> --cri-socket=unix:///var/run/containerd/containerd.sock
 
 ```
