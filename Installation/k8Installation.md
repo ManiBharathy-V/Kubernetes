@@ -1,4 +1,17 @@
-### Step 1: Set Hostname, Set ip and Update System###
+# Kubernetes Installation
+
+This document provide a full setp by step procedure to install k8 cluster 
+
+## System Prerequisites
+
+- At least 1 - Master-Node & 1 - Worker-Node
+- At least 4 CPUs and 4GB RAM
+- At least 20 GB Storage 
+
+---
+
+## Step 1: Set Hostname, Set ip and Update System
+```
 sudo su
 ip a
 ip route show default
@@ -25,13 +38,16 @@ reboot
 ping 8.8.8.8
 ping masternode
 ping localhost
-clear
+```
 
-### Step 2: Disable Swap###
+## Step 2: Disable Swap
+```
 swapoff -a
 sed -i '/ swap / s/^/#/' /etc/fstab
+```
 
-### Step 3: Load Kernel Modules and Sysctl Settings###
+## Step 3: Load Kernel Modules and Sysctl Settings
+```
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
@@ -47,18 +63,23 @@ net.ipv4.ip_forward = 1
 EOF
 
 sysctl --system
+```
 
-### Installing a container runtime ###
+## Installing a container runtime
+```
 sudo apt install -y containerd
 mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 vi /etc/containerd/config.toml
+```
 	// search for SystemdCgroup = false
 	//change to SystemdCgroup = true
+```
 systemctl restart containerd
 systemctl enable containerd
-
-### Step 7: Install kubeadm, kubelet, kubectl###
+```
+## Step 7: Install kubeadm, kubelet, kubectl
+```
 apt-get update
 
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -68,24 +89,24 @@ echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.
 apt-get update
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
+```
 
-
-
-### Step 8: initialize the cluster###
+## Step 8: initialize the cluster
+```
 kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=<your-private-ip> --cri-socket=unix:///var/run/cri-dockerd.sock
 
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 export KUBECONFIG=/etc/kubernetes/admin.conf
-
+```
 
 ### Step 9: Deploy Pod Network to Cluster###
-
+```
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.3/manifests/calico.yaml
 kubectl get nodes
 kubectl get pods -A
-
+```
 
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
