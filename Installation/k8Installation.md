@@ -11,6 +11,7 @@ This document provide a full setp by step procedure to install k8 cluster
 ---
 
 ## Step 1: Set Hostname, Set ip and Update System
+
 ```
 sudo su
 ip a
@@ -19,17 +20,27 @@ hostnamectl set-hostname masternode
 vi /etc/hosts
 ```
 /etc/hosts
-```
-
+add the following and comment everthing else
+<your-private-ip> masternode localhost
 ```
 cd /etc/netplan
 ls
 cp 50-cloud-init.yaml 50-cloud-init.yaml.old
 ls
 vi 50-cloud-init.yaml
+```
 50-cloud-init.yaml
 ```
-
+network:
+  ethernets:
+    ens5:
+      addresses:
+      - <your-private-ip>/24
+      gateway4: <your-gateway-ip>
+      nameservers:
+        addresses:
+        - 8.8.8.8
+```
 ```
 netplan apply
 ping 8.8.8.8
@@ -49,12 +60,14 @@ ping localhost
 ```
 
 ## Step 2: Disable Swap
+
 ```
 swapoff -a
 sed -i '/ swap / s/^/#/' /etc/fstab
 ```
 
 ## Step 3: Load Kernel Modules and Sysctl Settings
+
 ```
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
@@ -74,6 +87,7 @@ sysctl --system
 ```
 
 ## Installing a container runtime
+
 ```
 sudo apt install -y containerd
 mkdir -p /etc/containerd
@@ -90,6 +104,7 @@ systemctl restart containerd
 systemctl enable containerd
 ```
 ## Step 7: Install kubeadm, kubelet, kubectl
+
 ```
 apt-get update
 
@@ -103,6 +118,7 @@ apt-mark hold kubelet kubeadm kubectl
 ```
 
 ## Step 8: initialize the cluster
+
 ```
 kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=<your-private-ip> --cri-socket=unix:///var/run/containerd/containerd.sock
 ```
@@ -114,7 +130,8 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 export KUBECONFIG=/etc/kubernetes/admin.conf
 ```
 
-### Step 9: Deploy Pod Network to Cluster###
+## Step 9: Deploy Pod Network to Cluster###
+s
 ```
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.3/manifests/calico.yaml
 ```
@@ -131,6 +148,7 @@ kubectl get pods -A
 *** Join the Cluster 
 Paste the join command created from master node here
 example: sudo kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash> --cri-socket=unix:///var/run/containerd/containerd.sock
+
 ```
 kubectl get nodes
 kubectl get pods -A
