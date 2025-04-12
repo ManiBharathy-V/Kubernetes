@@ -17,11 +17,20 @@ ip a
 ip route show default
 hostnamectl set-hostname masternode
 vi /etc/hosts
+```
+/etc/hosts
+```
+
+```
 cd /etc/netplan
 ls
 cp 50-cloud-init.yaml 50-cloud-init.yaml.old
 ls
 vi 50-cloud-init.yaml
+50-cloud-init.yaml
+```
+
+```
 netplan apply
 ping 8.8.8.8
 sudo ufw allow 6443/tcp   # Kubernetes API server
@@ -32,8 +41,7 @@ sudo ufw allow 10257/tcp  # kube-controller-manager
 sudo ufw allow 179/tcp    # Calico/Flannel BGP (if used)
 sudo ufw reload
 systemctl enable ufw
-apt-get update
-apt-get upgrade -y
+apt update && apt upgrade -y
 reboot
 ping 8.8.8.8
 ping masternode
@@ -72,8 +80,11 @@ mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 vi /etc/containerd/config.toml
 ```
-	// search for SystemdCgroup = false
-	//change to SystemdCgroup = true
+/etc/containerd/config.toml
+Find: [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+    SystemdCgroup = false
+Change to: 
+    SystemdCgroup = true
 ```
 systemctl restart containerd
 systemctl enable containerd
@@ -93,8 +104,10 @@ apt-mark hold kubelet kubeadm kubectl
 
 ## Step 8: initialize the cluster
 ```
-kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=<your-private-ip> --cri-socket=unix:///var/run/cri-dockerd.sock
-
+kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=<your-private-ip> --cri-socket=unix:///var/run/containerd/containerd.sock
+```
+Copy the kubectl join token 
+```
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
@@ -104,25 +117,21 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 ### Step 9: Deploy Pod Network to Cluster###
 ```
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.3/manifests/calico.yaml
+```
+wait for 2 min then check
+```
 kubectl get nodes
 kubectl get pods -A
 ```
 
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+## Setup Worker-Node
 
-kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+*** Follow steps from 1 to 7
 
-
-Setup Worker-Node
-
-Follow steps from 1 to 7
-
-***IF YOU WANT TO GET THE JOIN TOKEN FROM THE MASTER-NODE***
-kubeadm token create --print-join-command
-//execute this command in master-node
-
-### Join the Cluster ###
+*** Join the Cluster 
 Paste the join command created from master node here
-example: sudo kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash> --cri-socket=unix:///var/run/cri-dockerd.sock
-
+example: sudo kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash> --cri-socket=unix:///var/run/containerd/containerd.sock
+```
 kubectl get nodes
+kubectl get pods -A
+```
