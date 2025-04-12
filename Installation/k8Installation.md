@@ -8,8 +8,10 @@ This document provide a full setp by step procedure to install k8 cluster
 - At least 4 CPUs and 4GB RAM
 - At least 20 GB Storage 
 
-*** In this cluser I have containerd as the container runtime, k8 version - v1.30 and calico as pod network ***
----
+For the following installation I have used 
+- container runtime - containerd
+- k8 version - v1.30 
+- pod network - calico
 
 ## Step 1: Set Hostname, Set ip and Update System
 
@@ -20,9 +22,9 @@ ip route show default
 hostnamectl set-hostname masternode
 vi /etc/hosts
 ```
-/etc/hosts <br />
+*/etc/hosts* <br />
 add the following and comment everthing else <br />
-<<your-private-ip>> masternode localhost<br />
+<your-private-ip\> masternode localhost<br />
 ```
 cd /etc/netplan
 ls
@@ -30,7 +32,7 @@ cp 50-cloud-init.yaml 50-cloud-init.yaml.old
 ls
 vi 50-cloud-init.yaml
 ```
-50-cloud-init.yaml
+*50-cloud-init.yaml*
 ```
 network:
   ethernets:
@@ -95,7 +97,7 @@ mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 vi /etc/containerd/config.toml
 ```
-/etc/containerd/config.toml<br />
+*/etc/containerd/config.toml*<br />
 Find: [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]<br />
     SystemdCgroup = false<br />
 Change to: <br />
@@ -144,11 +146,11 @@ kubectl get pods -A
 --- 
 ## Setup Worker-Node
 
-*** Follow steps from 1 to 7 ***
+***Follow steps from 1 to 7***
 
-*** Join the Cluster ***
+***Join the Cluster***<br />
 Paste the join command created from master node here<br />
-example: sudo kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash> --cri-socket=unix:///var/run/containerd/containerd.sock
+>example: sudo kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash> --cri-socket=unix:///var/run/containerd/containerd.sock
 
 ```
 kubectl get nodes
