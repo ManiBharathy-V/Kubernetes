@@ -1,17 +1,17 @@
 # Kubernetes Installation
 
-This document provide a full setp by step procedure to install k8 cluster 
+TThis document provide a full step by step procedure to install k8 cluster in any Cloud platform (AWS, Azure, GCP,..) or BareMetal servers
 
 ## System Prerequisites
 
 - At least 1 - Master-Node & 1 - Worker-Node
-- At least 4 CPUs and 4GB RAM
+- At least 2 CPUs and 4GB RAM
 - At least 20 GB Storage 
 
 For the following installation I have used 
-- container runtime - containerd
-- k8 version - v1.30 
-- pod network - calico
+- Container Runtime Interface(CRI) - Containerd
+- K8 version - v1.30 
+- Container Network Interface (CNI)- Calico
 
 ## Step 1: Set Hostname, Set ip and Update System
 
@@ -89,7 +89,7 @@ EOF
 sysctl --system
 ```
 
-## Installing a container runtime
+## Step 4: Installing a container runtime
 
 ```
 apt install -y containerd
@@ -106,7 +106,7 @@ Change to: <br />
 systemctl restart containerd
 systemctl enable containerd
 ```
-## Step 7: Install kubeadm, kubelet, kubectl
+## Step 5: Install kubeadm, kubelet, kubectl
 
 ```
 apt-get update
@@ -120,7 +120,7 @@ apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
 ```
 
-## Step 8: initialize the cluster
+## Step 6: initialize the cluster
 
 ```
 kubeadm init --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=<your-private-ip> --cri-socket=unix:///var/run/containerd/containerd.sock
@@ -133,7 +133,7 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 export KUBECONFIG=/etc/kubernetes/admin.conf
 ```
 
-## Step 9: Deploy Pod Network to Cluster###
+## Step 7: Deploy Pod Network to Cluster
 
 ```
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.3/manifests/calico.yaml
@@ -147,7 +147,7 @@ kubectl cluster-info
 --- 
 ## Setup Worker-Node
 
-***Follow steps from 1 to 7***
+***Follow steps from 1 to 5***
 
 ***Join the Cluster***<br />
 Paste the join command created from master node here<br />
