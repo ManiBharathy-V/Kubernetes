@@ -47,13 +47,13 @@ network:
 ```
 netplan apply
 ping 8.8.8.8
-sudo ufw allow 6443/tcp   # Kubernetes API server
-sudo ufw allow 2379:2380/tcp  # etcd
-sudo ufw allow 10250/tcp  # kubelet API
-sudo ufw allow 10259/tcp  # kube-scheduler
-sudo ufw allow 10257/tcp  # kube-controller-manager
-sudo ufw allow 179/tcp    # Calico/Flannel BGP (if used)
-sudo ufw reload
+ufw allow 6443/tcp   # Kubernetes API server
+ufw allow 2379:2380/tcp  # etcd
+ufw allow 10250/tcp  # kubelet API
+ufw allow 10259/tcp  # kube-scheduler
+ufw allow 10257/tcp  # kube-controller-manager
+ufw allow 179/tcp    # Calico/Flannel BGP (if used)
+ufw reload
 systemctl enable ufw
 apt update && apt upgrade -y
 reboot
@@ -92,7 +92,7 @@ sysctl --system
 ## Installing a container runtime
 
 ```
-sudo apt install -y containerd
+apt install -y containerd
 mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 vi /etc/containerd/config.toml
@@ -142,6 +142,7 @@ wait for 2 min then check
 ```
 kubectl get nodes
 kubectl get pods -A
+kubectl cluster-info
 ```
 --- 
 ## Setup Worker-Node
