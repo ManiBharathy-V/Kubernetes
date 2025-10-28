@@ -1,0 +1,153 @@
+pod -01 = apache2 (web)
+
+apt install apache2
+sudo systemctl start apache2
+sudo systemctl enable apache2
+
+vi /var/www/html/index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3-Tier Application</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        #result { margin-top: 20px; padding: 20px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>3-Tier Application Demo</h1>
+        <button onclick="checkConnection()">Check DB Connection</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function checkConnection() {
+            try {
+                const response = await fetch('http://pod-02-ip:5000/db-status');
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `<h3>Backend Response:</h3>
+                     <p><strong>Status:</strong> ${data.status}</p>
+                     <p><strong>Message:</strong> ${data.message}</p>
+                     <p><strong>Database Time:</strong> ${data.db_time}</p>`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `<h3>Error:</h3><p>Cannot connect to backend: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+
+pod -02 Backend Server (Flask)
+
+apt install python3 python3-pip
+pip3 install flask mysql-connector-python
+
+vi app.py
+from flask import Flask, jsonify
+from flask_cors import CORS
+import mysql.connector
+from datetime import datetime
+import os
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all domains
+
+# Database configuration
+DB_CONFIG = {
+    'host': 'pod-3_ip',  # Replace with actual VM3 IP
+    'user': 'appuser',
+    'password': 'apppassword',
+    'database': 'testdb'
+}
+
+@app.route('/db-status')
+def db_status():
+    try:
+        # Connect to database
+        connection = mysql.connector.connect(**DB_CONFIG)
+        cursor = connection.cursor()
+        
+        # Get current time from database
+        cursor.execute("SELECT NOW()")
+        result = cursor.fetchone()
+        db_time = result[0].strftime("%Y-%m-%d %H:%M:%S")
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Database connected successfully!',
+            'db_time': db_time
+        })
+        
+    except mysql.connector.Error as err:
+        return jsonify({
+            'status': 'error',
+            'message': f'Database connection failed: {str(err)}',
+            'db_time': 'N/A'
+        }), 500
+    
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Unexpected error: {str(e)}',
+            'db_time': 'N/A'
+        }), 500
+
+@app.route('/health')
+def health():
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Flask backend is running',
+        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
+
+pip3 install flask-cors
+python3 app.py
+
+
+pod -03 Database Server (MySQL)
+
+apt install mysql-server
+sudo systemctl start mysql
+sudo systemctl enable mysql
+mysql_secure_installation
+mysql -u root -p
+
+CREATE DATABASE testdb;
+CREATE USER 'appuser'@'%' IDENTIFIED BY 'apppassword';
+CREATE USER 'appuser'@'pod-03-ip' IDENTIFIED BY 'apppassword';
+GRANT ALL PRIVILEGES ON testdb.* TO 'appuser'@'%';
+GRANT ALL PRIVILEGES ON testdb.* TO 'appuser'@'pod-03-ip';
+FLUSH PRIVILEGES;
+
+USE testdb;
+CREATE TABLE connection_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    message VARCHAR(255)
+);
+
+INSERT INTO connection_log (message) VALUES ('Database initialized successfully');
+EXIT;
+
+vi /etc/mysql/mysql.conf.d/mysqld.cnf
+Find and change:
+bind-address = 127.0.0.1
+to:
+bind-address = 0.0.0.0
+
+ systemctl restart mysql
+
+
+create a deployment and service to expose this application out side the cluster
